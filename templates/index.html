@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #E5DDD5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #chat-log {
+            width: 60%;
+            height: 70%;
+            background-color: #E5DDD5;
+            padding: 1rem;
+            overflow-y: auto;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+
+        .message.user {
+            align-items: flex-end;
+            align-self: flex-end;
+        }
+
+        .message.alfred {
+            align-items: flex-start;
+            align-self: flex-start;
+        }
+
+        .message .author {
+            font-size: 0.7rem;
+            color: #8c8c8c;
+        }
+
+        .message .text {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 0.8rem 1.2rem;
+            font-size: 1rem;
+            color: #222;
+            white-space: pre-wrap;
+        }
+
+        .message.alfred .text {
+            background-color: #0b93f6;
+            color: #fff;
+        }
+
+        form {
+            width: 60%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+            background-color: #F0F0F0;
+            padding: 0.5rem;
+            border-radius: 24px;
+        }
+
+        textarea {
+            background-color: #E5DDD5;
+            color: #222;
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem;
+            outline: none;
+            resize: none;
+            flex-grow: 1;
+            margin-left: 0.5rem;
+            overflow: hidden;
+            min-height: 40px;
+            max-height: 200px;
+        }
+
+        input[type="submit"] {
+            background-color: #0b93f6;
+            color: #ffffff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("message-form");
+            const messageInput = document.getElementById("message-input");
+
+            messageInput.addEventListener("input", (e) => {
+                e.target.style.height = "inherit";
+                e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px";
+            });
+
+            messageInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event("submit"));
+                }
+            });
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const message = messageInput.value;
+                messageInput.value = "";
+
+                appendMessage("User", message, false);
+
+                const response = await fetch("/send_message", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                appendMessage("Alfred", data.response, true);
+            });
+        });
+
+        function appendMessage(author, text, isAlfred) {
+            const chatLog = document.getElementById("chat-log");
+            const message = document.createElement("div");
+            message.className = "message" + (isAlfred ? " alfred" : " user");
+
+            const authorElement = document.createElement("span");
+            authorElement.className = "author";
+            authorElement.textContent = author + ": ";
+
+            const textElement = document.createElement("span");
+            textElement.className = "text";
+            textElement.textContent = text;
+
+            message.appendChild(authorElement);
+            message.appendChild(textElement);
+            chatLog.appendChild(message);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+    </script>
+</head>
+<body>
+    <div id="chat-log"></div>
+    <form id="message-form">
+        <textarea id="message-input" rows="1" placeholder="..." autocomplete="off"></textarea>
+        <input type="submit" value="Send">
+    </form>
+</body>
+</html>
